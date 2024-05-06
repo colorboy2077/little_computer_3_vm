@@ -1,0 +1,8 @@
+.vscode/
+*.asm
+*.bin
+*.hex
+*.lst
+*.obj
+*.sym
+lc3_vm
