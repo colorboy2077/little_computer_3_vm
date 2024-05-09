@@ -121,7 +121,7 @@ int execute(uint16_t instruction, uint16_t *arguments)
 		}
 		case INSTR_BR:
 		{
-			arguments[2] = get_bits_between(registers[R_PSR], 2, 0);
+			arguments[2] = sign_extend(get_bits_between(registers[R_PSR], 2, 0), 9);
 		}
 		case INSTR_LD:
 		case INSTR_LDI:
@@ -130,8 +130,7 @@ int execute(uint16_t instruction, uint16_t *arguments)
 		case INSTR_STI:
 		{
 			arguments[0] = get_bits_between(instruction, 11, 9);
-			arguments[1] = get_bits_between(instruction, 8, 0);
-
+			arguments[1] = sign_extend(get_bits_between(instruction, 8, 0), 9);
 			break;
 		}
 		case INSTR_LDR:
@@ -172,7 +171,7 @@ int execute(uint16_t instruction, uint16_t *arguments)
 		{
 			if (arguments[0] & arguments[2])
 			{
-				registers[R_PC] += sign_extend(arguments[1], 9);
+				registers[R_PC] += arguments[1];
 			}
 			break;
 		}		
@@ -180,7 +179,7 @@ int execute(uint16_t instruction, uint16_t *arguments)
 		{
 			if (get_bits_between(instruction, 5, 5))
 			{
-				registers[arguments[0]] = registers[arguments[1]] + sign_extend(arguments[2], 5);
+				registers[arguments[0]] = registers[arguments[1]] + arguments[2];
 			}
 			else
 			{
@@ -191,15 +190,14 @@ int execute(uint16_t instruction, uint16_t *arguments)
 		}
 		case INSTR_LD:
 		{
-			uint16_t pcoffset9 = sign_extend(arguments[1], 9);
-			registers[arguments[0]] = switch_endianness(memory[registers[R_PC] + pcoffset9]);
+			registers[arguments[0]] = switch_endianness(memory[registers[R_PC] + arguments[1]]);
 			update_condition_code(registers[arguments[0]]);
 			break;
 		}
 			
 		case INSTR_ST:
 		{
-			memory[registers[R_PC] + sign_extend(arguments[1], 9)] = switch_endianness(registers[arguments[0]]);
+			memory[registers[R_PC] + arguments[1]] = switch_endianness(registers[arguments[0]]);
 			break;
 		}
 		case INSTR_JSR:
@@ -220,7 +218,7 @@ int execute(uint16_t instruction, uint16_t *arguments)
 		{
 			if (get_bits_between(instruction, 5, 5))
 			{
-				registers[arguments[0]] = registers[arguments[1]] & sign_extend(arguments[2], 5);
+				registers[arguments[0]] = registers[arguments[1]] & arguments[2];
 			}
 			else
 			{
@@ -254,14 +252,14 @@ int execute(uint16_t instruction, uint16_t *arguments)
 		}
 		case INSTR_LDI:
 		{
-			uint16_t pointer = switch_endianness(memory[registers[R_PC] + sign_extend(arguments[1], 9)]);
+			uint16_t pointer = switch_endianness(memory[registers[R_PC] + arguments[1]]);
 			registers[arguments[0]] = switch_endianness(memory[pointer]);
 			update_condition_code(registers[arguments[0]]);
 			break;
 		}
 		case INSTR_STI:
 		{
-			uint16_t pointer = switch_endianness(memory[registers[R_PC] + sign_extend(arguments[1], 9)]);
+			uint16_t pointer = switch_endianness(memory[registers[R_PC] + arguments[1]]);
 			memory[pointer] = switch_endianness(registers[arguments[0]]);
 			break;
 		}
@@ -277,7 +275,7 @@ int execute(uint16_t instruction, uint16_t *arguments)
 		}
 		case INSTR_LEA:
 		{
-			registers[arguments[0]] = registers[R_PC] + sign_extend(arguments[1], 9);
+			registers[arguments[0]] = registers[R_PC] + arguments[1];
 			update_condition_code(registers[arguments[0]]);
 			break;
 		}
@@ -309,7 +307,7 @@ int execute(uint16_t instruction, uint16_t *arguments)
 
 int main(int argc, char **argv)
 {
-	FILE *file = fopen("./assembly.obj", "r");
+	FILE *file = fopen("./test.obj", "r");
 
 	uint16_t program_start;
 	fread(&program_start, 2, 1, file);
